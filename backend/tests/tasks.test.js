@@ -32,7 +32,7 @@ describe('Task Manager API', () => {
       sort: () => ({ lean: async () => [{ _id: 't1', title: 'Write tests', status: 'pending' }] }),
     });
     const res = await request(app).get('/tasks').set(auth);
-    expect(res.statusCode).toBe(404); // CI-DEMO
+    expect(res.statusCode).toBe(200); // CI-DEMO
     expect(res.body.success).toBe(true);
     expect(res.body.count).toBe(1);
   });

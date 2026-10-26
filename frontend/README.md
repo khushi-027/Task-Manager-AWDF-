@@ -19,26 +19,30 @@ App will be available at `http://localhost:5173`.
 
 ## What It Does
 
-- Fetches tasks from the backend on load
-- Create a task using the input form and Add Task button
-- Select a task's status indicator to cycle it through Pending, Ongoing, and Complete
-- Pending, ongoing, and completed tasks are shown in their matching sections
-- Delete a task with the Delete button
-- Loads the authenticated task workspace as a separate JavaScript chunk after authentication
+- Authenticates against the existing backend and protects workspace routes
+- Creates, prioritizes, updates, and deletes backend-persisted tasks
+- Shares one task collection between the Tasks and Projects pages
+- Shows task status totals and an interactive progress chart
+- Provides a role-protected Admin report and CSV download
+- Loads secondary pages as separate JavaScript chunks
 
 ## Project Structure
 
 ```
 src/
-  App.jsx               authentication state and lazy page loading
+  App.jsx               authentication, routing, and lazy page loading
   components/
     api.js              fetch wrappers for all backend endpoints
   pages/
-    AuthPage.jsx        lazy-loaded sign-in and registration
-    Dashboard.jsx       lazy-loaded task workspace and CRUD UI
-    TaskSections.jsx    task list, loaded when tasks are available
+    AuthPage.jsx        sign-in and registration
+    WorkspaceLayout.jsx shared navigation and task data
+    Dashboard.jsx       task creation and status sections
+    ProjectsPage.jsx    task progress chart
+    AdminPage.jsx       date-range report and CSV export
+    ContactPage.jsx     contact information availability
+    TaskSections.jsx    task list and task controls
   statuses.js           shared task status definitions
-  index.css              base reset and background colour
+  index.css              shared lavender theme and responsive layout
 main.jsx                app entry point
 docs/
   build-before.txt      baseline Vite build output
@@ -47,7 +51,7 @@ docs/
 
 ## Practical 8: Performance and lazy loading
 
-Auth, Dashboard, and the task list use lazy-loaded JavaScript chunks. A brief build comparison is in [docs/practical8-performance.md](./docs/practical8-performance.md); raw build outputs are in `docs/build-before.txt` and `docs/build-after.txt`.
+Auth and workspace pages use lazy-loaded JavaScript chunks. Run `npm run build` and inspect `dist/assets` to verify page chunks are emitted. Admin role setup and report behavior are documented in [the backend Practical 8 notes](../backend/docs/practical8-admin-and-reports.md).
 
 ## Backend Repo
 

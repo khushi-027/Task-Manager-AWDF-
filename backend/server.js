@@ -8,6 +8,13 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const Task = require('./models/tasks');
 const User = require('./models/users');
+const {
+  CACHE_TTL_SECONDS,
+  allTasksCacheKey,
+  cache,
+  invalidateUserTaskCache,
+  singleTaskCacheKey
+} = require('./taskCache');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +48,19 @@ const requireDatabase = (req, res, next) => {
   next();
 };
 
+const requireAdmin = async (req, res, next) => {
+  try {
+    if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
+    const user = await User.findById(req.user.userId).select('role');
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Administrator access is required' });
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 const sendDatabaseUnavailable = (res) => res.status(503).json({
   success: false,
   message: 'The database is unavailable. Check the MongoDB connection and try again.'
@@ -68,7 +88,7 @@ const authenticate = (req, res, next) => {
     if (!user.userId || !mongoose.Types.ObjectId.isValid(user.userId)) {
       return res.status(401).json({ success: false, message: 'Invalid or expired token' });
     }
-    req.user = user;
+    req.user = { ...user, role: user.role === 'admin' ? 'admin' : 'user' };
     next();
   } catch {
     res.status(401).json({ success: false, message: 'Invalid or expired token' });
@@ -76,7 +96,7 @@ const authenticate = (req, res, next) => {
 };
 
 const createToken = (user) => jwt.sign(
-  { userId: user._id.toString(), email: user.email },
+  { userId: user._id.toString(), email: user.email, role: user.role || 'user' },
   JWT_SECRET,
   { expiresIn: '7d' }
 );
@@ -93,7 +113,7 @@ const validateTaskIdParam = (req, res, next) => {
 
 app.post('/auth/register', requireJwtSecret, async (req, res, next) => {
   try {
-    const { email: submittedEmail, password } = req.body || {};
+    const { email: submittedEmail, password, role: submittedRole = 'user' } = req.body || {};
     const email = typeof submittedEmail === 'string' ? submittedEmail.trim().toLowerCase() : '';
     if (!emailPattern.test(email) || typeof password !== 'string' || password.length < 6) {
       return res.status(400).json({
@@ -101,17 +121,24 @@ app.post('/auth/register', requireJwtSecret, async (req, res, next) => {
         message: 'Enter a valid email and a password of at least 6 characters'
       });
     }
+    if (!['user', 'admin'].includes(submittedRole)) {
+      return res.status(400).json({ success: false, message: 'Choose a valid account type' });
+    }
     if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
 
     if (await User.exists({ email })) {
       return res.status(409).json({ success: false, message: 'An account with that email already exists' });
     }
 
-    const user = await User.create({ email, password: await bcrypt.hash(password, 10) });
+    const user = await User.create({
+      email,
+      password: await bcrypt.hash(password, 10),
+      role: submittedRole
+    });
     res.status(201).json({
       success: true,
       token: createToken(user),
-      user: { id: user._id.toString(), email: user.email }
+      user: { id: user._id.toString(), email: user.email, role: user.role || 'user' }
     });
   } catch (err) {
     next(err);
@@ -135,30 +162,80 @@ app.post('/auth/login', requireJwtSecret, async (req, res, next) => {
     res.status(200).json({
       success: true,
       token: createToken(user),
-      user: { id: user._id.toString(), email: user.email }
+      user: { id: user._id.toString(), email: user.email, role: user.role || 'user' }
     });
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/tasks', authenticate, requireDatabase, async (req, res, next) => {
+app.get('/admin/report', authenticate, requireAdmin, async (req, res, next) => {
   try {
-    const tasks = await Task.find({ user: req.user.userId }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, count: tasks.length, data: tasks });
+    const { from, to } = req.query;
+    const isDateOnly = (value) => typeof value === 'string'
+      && /^\d{4}-\d{2}-\d{2}$/.test(value)
+      && !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))
+      && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
+    if (!isDateOnly(from) || !isDateOnly(to)) {
+      return res.status(400).json({ success: false, message: 'Provide valid From and To dates in YYYY-MM-DD format' });
+    }
+
+    const start = new Date(`${from}T00:00:00.000Z`);
+    const endExclusive = new Date(`${to}T00:00:00.000Z`);
+    if (start > endExclusive) {
+      return res.status(400).json({ success: false, message: 'From date must not be later than To date' });
+    }
+    endExclusive.setUTCDate(endExclusive.getUTCDate() + 1);
+    if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
+
+    const tasks = await Task.find({
+      createdAt: { $gte: start, $lt: endExclusive }
+    }).sort({ createdAt: -1 }).lean();
+    res.status(200).json({ success: true, data: { tasks } });
   } catch (err) {
     next(err);
   }
 });
 
-app.get('/tasks/:id', authenticate, validateTaskIdParam, requireDatabase, async (req, res, next) => {
+app.get('/tasks', authenticate, async (req, res, next) => {
   try {
-    const task = await Task.findOne({ _id: req.params.id, user: req.user.userId });
-    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
-    res.status(200).json({ success: true, data: task });
+    const cacheKey = allTasksCacheKey(req.user.userId);
+    const cachedResponse = cache.get(cacheKey);
+    if (cachedResponse) return res.status(200).json(cachedResponse);
+    if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
+
+    const tasks = await Task.find({ user: req.user.userId }).sort({ createdAt: -1 }).lean();
+    const response = { success: true, count: tasks.length, data: tasks };
+    cache.set(cacheKey, response);
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }
+});
+
+app.get('/tasks/:id', authenticate, validateTaskIdParam, async (req, res, next) => {
+  try {
+    const cacheKey = singleTaskCacheKey(req.user.userId, req.params.id);
+    const cachedResponse = cache.get(cacheKey);
+    if (cachedResponse) return res.status(200).json(cachedResponse);
+    if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
+
+    const task = await Task.findOne({ _id: req.params.id, user: req.user.userId }).lean();
+    if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    const response = { success: true, data: task };
+    cache.set(cacheKey, response);
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get('/debug/cache', authenticate, (req, res) => {
+  res.status(200).json({
+    success: true,
+    ttlSeconds: CACHE_TTL_SECONDS,
+    ...cache.getStats()
+  });
 });
 
 app.post('/tasks', authenticate, async (req, res, next) => {
@@ -186,8 +263,10 @@ app.post('/tasks', authenticate, async (req, res, next) => {
       title: body.title.trim(),
       description: body.description,
       status: body.status || 'pending',
-      priority: body.priority || 'medium'
+      priority: body.priority || 'medium',
+      completedAt: body.status === 'complete' ? new Date() : null
     });
+    invalidateUserTaskCache(req.user.userId);
     res.status(201).json({ success: true, message: 'Task created successfully', data: task });
   } catch (err) {
     next(err);
@@ -229,12 +308,16 @@ app.put('/tasks/:id', authenticate, validateTaskIdParam, async (req, res, next) 
     }
     if (mongoose.connection.readyState !== 1) return sendDatabaseUnavailable(res);
 
-    const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.userId },
-      { $set: updates },
-      { new: true, runValidators: true }
-    );
+    const task = await Task.findOne({ _id: req.params.id, user: req.user.userId });
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    if (body.status !== undefined) {
+      updates.completedAt = body.status === 'complete'
+        ? (task.completedAt || new Date())
+        : null;
+    }
+    task.set(updates);
+    await task.save();
+    invalidateUserTaskCache(req.user.userId, req.params.id);
     res.status(200).json({ success: true, message: 'Task updated successfully', data: task });
   } catch (err) {
     next(err);
@@ -245,6 +328,7 @@ app.delete('/tasks/:id', authenticate, validateTaskIdParam, requireDatabase, asy
   try {
     const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user.userId });
     if (!task) return res.status(404).json({ success: false, message: 'Task not found' });
+    invalidateUserTaskCache(req.user.userId, req.params.id);
     res.status(200).json({ success: true, message: 'Task deleted successfully', data: task });
   } catch (err) {
     next(err);
@@ -277,18 +361,24 @@ app.use((err, req, res, next) => {
   res.status(status).json({ success: false, message });
 });
 
-if (process.env.MONGO_URI) {
-  mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB connected successfully'))
-    .catch((err) => {
-      const safeMessage = String(err.message || 'Unknown error')
-        .replace(/mongodb(?:\+srv)?:\/\/[^\s@]+@[^\s]+/gi, 'mongodb://[redacted]');
-      console.error(`MongoDB connection failed: ${safeMessage}. Check MONGO_URI and confirm MongoDB is reachable.`);
-    });
-} else {
-  console.error('MONGO_URI is missing. Add the MongoDB connection string to backend/.env.');
+// Start the DB connection and HTTP server only when run directly (node server.js).
+// Tests (Jest/Supertest) import the app without opening a port or a DB connection.
+if (require.main === module) {
+  if (process.env.MONGO_URI) {
+    mongoose.connect(process.env.MONGO_URI)
+      .then(() => console.log('MongoDB connected successfully'))
+      .catch((err) => {
+        const safeMessage = String(err.message || 'Unknown error')
+          .replace(/mongodb(?:\+srv)?:\/\/[^\s@]+@[^\s]+/gi, 'mongodb://[redacted]');
+        console.error(`MongoDB connection failed: ${safeMessage}. Check MONGO_URI and confirm MongoDB is reachable.`);
+      });
+  } else {
+    console.error('MONGO_URI is missing. Add the MongoDB connection string to backend/.env.');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Task Manager API listening on port ${PORT}`);
+  });
 }
 
-app.listen(PORT, () => {
-  console.log(`Task Manager API listening on port ${PORT}`);
-});
+module.exports = app;

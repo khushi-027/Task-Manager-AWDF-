@@ -43,10 +43,10 @@ export const loginUser = (email, password) => requestJson(`${BASE_URL}/auth/logi
   body: JSON.stringify({ email, password })
 });
 
-export const registerUser = (email, password) => requestJson(`${BASE_URL}/auth/register`, {
+export const registerUser = (email, password, role = 'user') => requestJson(`${BASE_URL}/auth/register`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, password })
+  body: JSON.stringify({ email, password, role })
 });
 
 export const getTasks = () => requestJson(`${BASE_URL}/tasks`, {
@@ -70,3 +70,11 @@ export const deleteTask = (id) => requestJson(`${BASE_URL}/tasks/${id}`, {
   method: 'DELETE',
   headers: authHeaders()
 });
+
+export const getAdminReport = (from, to) => {
+  const query = new URLSearchParams({ from, to });
+  return requestJson(`${BASE_URL}/admin/report?${query}`, {
+    method: 'GET',
+    headers: authHeaders()
+  });
+};

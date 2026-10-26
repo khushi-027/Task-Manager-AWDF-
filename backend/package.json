@@ -4,9 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --verbose",
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "lint": "eslint .",
+    "demo:break": "node scripts/toggle-test.js break",
+    "demo:fix": "node scripts/toggle-test.js fix"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +21,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^9.9.1"
+    "mongoose": "^9.9.1",
+    "node-cache": "^5.1.2"
   },
   "repository": {
     "type": "git",
@@ -27,5 +31,10 @@
   "bugs": {
     "url": "https://github.com/Krima027/task-manager-api-24AIML027/issues"
   },
-  "homepage": "https://github.com/Krima027/task-manager-api-24AIML027#readme"
+  "homepage": "https://github.com/Krima027/task-manager-api-24AIML027#readme",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
 }

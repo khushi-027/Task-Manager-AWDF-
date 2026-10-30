@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #F8F3FC;
+    --bg-pale-pink: #FFF2F8;
+    --bg-lavender: #F0E5F8;
+    --primary-purple: #7041A5;
+    --primary-purple-hover: #5d338e;
+    --deep-purple: #38234C;
+    --pink-accent: #B34D91;
+    --pink-accent-hover: #9b3d7a;
+    --text-main: #463353;
+    --text-secondary: #987BAA;
+    --border-soft: #E9D5EF;
+    --card-white: #FFFFFF;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbars with pink/purple accent */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F8F3FC;
+}
+::-webkit-scrollbar-thumb {
+  background: #E0C7E9;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C49BCF;
+}

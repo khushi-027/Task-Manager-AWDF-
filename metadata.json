@@ -1,0 +1,6 @@
+{
+  "name": "Task Manager - MERN Full-Stack Workspace",
+  "description": "An elegant full-stack task management application with role-based access, interactive dashboard, project analytics, admin reports, and Groq AI description generator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

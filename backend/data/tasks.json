@@ -1,12 +1,106 @@
 [
   {
-    "id": 1,
-    "title": "Learn Express",
-    "completed": false
+    "_id": "tsk_mvv82n7vqkzi7",
+    "title": "Review Project Velocity and Status Charts",
+    "description": "Analyze weekly milestone completion rates in the Projects tab.",
+    "priority": "Low",
+    "status": "Pending",
+    "owner": "usr_mvv82n6vylk62",
+    "ownerName": "Vidhi Sharma",
+    "ownerEmail": "user@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:04:34.315Z",
+    "updatedAt": "2026-10-30T17:04:34.315Z"
   },
   {
-    "id": 2,
-    "title": "Test",
-    "completed": false
+    "_id": "tsk_mvv82n7j8r4cc",
+    "title": "Design Soft Pink-Lavender UI Dashboard",
+    "description": "Apply #7041A5 primary purple and #B34D91 pink accent to all board cards.",
+    "priority": "Medium",
+    "status": "Completed",
+    "owner": "usr_mvv82n6vylk62",
+    "ownerName": "Vidhi Sharma",
+    "ownerEmail": "user@taskmanager.com",
+    "completedAt": "2026-10-30T17:04:34.303Z",
+    "createdAt": "2026-10-30T17:04:34.303Z",
+    "updatedAt": "2026-10-30T17:04:34.303Z"
+  },
+  {
+    "_id": "tsk_mvv82n79bmb8q",
+    "title": "Implement Groq AI Description Generation",
+    "description": "Connect backend endpoint to Groq llama-3.3-70b-versatile with client loading state.",
+    "priority": "High",
+    "status": "In Progress",
+    "owner": "usr_mvv82n6vylk62",
+    "ownerName": "Vidhi Sharma",
+    "ownerEmail": "user@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:04:34.293Z",
+    "updatedAt": "2026-10-30T17:04:34.293Z"
+  },
+  {
+    "_id": "tsk_mvv82iv9zgac8",
+    "title": "Apply soft pink-purple-lavender theme and typography",
+    "description": "Implement WCAG-compliant color scheme with Plus Jakarta Sans and JetBrains Mono.",
+    "priority": "Medium",
+    "status": "Completed",
+    "owner": "usr_mvv81jn5m8r6f",
+    "ownerName": "Workspace Administrator",
+    "ownerEmail": "admin@taskmanager.com",
+    "completedAt": "2026-10-30T17:04:28.677Z",
+    "createdAt": "2026-10-30T17:04:28.677Z",
+    "updatedAt": "2026-10-30T17:04:28.677Z"
+  },
+  {
+    "_id": "tsk_mvv82iuxz9h0z",
+    "title": "Develop date-range filter for workspace compliance report",
+    "description": "Filter tasks by creation date and enable CSV download for project audits.",
+    "priority": "Medium",
+    "status": "In Progress",
+    "owner": "usr_mvv81jn5m8r6f",
+    "ownerName": "Workspace Administrator",
+    "ownerEmail": "admin@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:04:28.665Z",
+    "updatedAt": "2026-10-30T17:04:28.665Z"
+  },
+  {
+    "_id": "tsk_mvv82iun92g0f",
+    "title": "Configure Groq API key in production environment",
+    "description": "Add GROQ_API_KEY into production environment to enable high-speed LLM task generation.",
+    "priority": "High",
+    "status": "Pending",
+    "owner": "usr_mvv81jn5m8r6f",
+    "ownerName": "Workspace Administrator",
+    "ownerEmail": "admin@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:04:28.655Z",
+    "updatedAt": "2026-10-30T17:04:28.655Z"
+  },
+  {
+    "_id": "tsk_mvv82iuc13mnn",
+    "title": "Design interactive wireframe for notification center",
+    "description": "Create responsive layouts and state transitions for user activity alerts.",
+    "priority": "Low",
+    "status": "Pending",
+    "owner": "usr_mvv81jn5m8r6f",
+    "ownerName": "Workspace Administrator",
+    "ownerEmail": "admin@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:04:28.644Z",
+    "updatedAt": "2026-10-30T17:04:28.644Z"
+  },
+  {
+    "_id": "tsk_mvv81tm7mgd0x",
+    "title": "Setup MongoDB and Environment Variables",
+    "description": "Configure MONGO_URI and Groq API keys in backend configuration.",
+    "priority": "High",
+    "status": "In Progress",
+    "owner": "usr_mvv81jn5m8r6f",
+    "ownerName": "Workspace Administrator",
+    "ownerEmail": "admin@taskmanager.com",
+    "completedAt": null,
+    "createdAt": "2026-10-30T17:03:55.951Z",
+    "updatedAt": "2026-10-30T17:03:55.951Z"
   }
 ]
